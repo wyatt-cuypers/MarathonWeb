@@ -3,12 +3,12 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { Button, Tabs, useMediaQuery } from "@mui/material";
 import CustomCard from "../Components/CustomCard";
 import CustomTimeCard from "../Components/CustomTimeCard";
-import useRunData from "../Hooks/useRunData";
+import useRunData, { getRunningTime } from "../Hooks/useRunData";
 import CustomChart from "../Components/CustomChart";
 import CustomLoading from "../Components/CustomLoading";
 import CustomError from "../Components/CustomError";
 import CustomCountdown from "../Components/CustomCountdown";
-import { SyntheticEvent, memo, useState } from "react";
+import { SyntheticEvent, memo, useState, useMemo } from "react";
 import { StyledTab } from "../Components/StyledTab";
 
 export interface runDataType {
@@ -40,6 +40,39 @@ const RunningStats = () => {
     error,
     loading,
   } = useRunData();
+  const values = useMemo(
+    () => ({
+      distance: runsTabsValue === 0 ? distance : Number(lastRun?.distance),
+      numberOfRuns: runsTabsValue === 0 ? numberOfRuns : 1,
+      totalSeconds:
+        runsTabsValue === 0
+          ? totalSeconds
+          : getRunningTime([lastRun as runDataType]),
+      totalMinutes:
+        runsTabsValue === 0
+          ? totalMinutes
+          : getRunningTime([lastRun as runDataType]) / 60,
+      totalHours:
+        runsTabsValue === 0
+          ? totalHours
+          : getRunningTime([lastRun as runDataType]) / 60 / 60,
+      averageHR: runsTabsValue === 0 ? averageHR : lastRun?.averageHR,
+      calories: runsTabsValue === 0 ? calories : lastRun?.calories,
+      averagePace: runsTabsValue === 0 ? averagePace : `Pace: ${lastRun?.averagePace.split(":")[1]}:${lastRun?.averagePace.split(":")[2]}`,
+    }),
+    [
+      averageHR,
+      averagePace,
+      calories,
+      distance,
+      lastRun,
+      numberOfRuns,
+      runsTabsValue,
+      totalHours,
+      totalMinutes,
+      totalSeconds,
+    ]
+  );
   if (loading) return <CustomLoading />;
   if (error) return <CustomError error={error} />;
   return (
@@ -79,31 +112,35 @@ const RunningStats = () => {
       </div>
       <CustomCountdown targetDate={"2024-06-01T00:00:00"} />
       <div style={{ display: !isMobile ? "flex" : "", alignItems: "center" }}>
-        <CustomChart distance={distance} />
+        <CustomChart distance={values.distance} />
         <div style={{ flex: 1 }}>
           <div
             className="cardContainer"
             style={{ display: !isMobile ? "flex" : "" }}
           >
-            <CustomCard title="Runs">{numberOfRuns}</CustomCard>
-            <CustomCard title="Heart Rate">{averageHR} BPM</CustomCard>
+            <CustomCard title="Runs">{values.numberOfRuns}</CustomCard>
+            <CustomCard title="Heart Rate">{values.averageHR} BPM</CustomCard>
           </div>
           <div
             className="cardContainer"
             style={{ display: !isMobile ? "flex" : "" }}
           >
-            <CustomCard title="Total Distance">{distance} Miles</CustomCard>
-            <CustomCard title="Calories Burned">{calories} Calories</CustomCard>
+            <CustomCard title="Total Distance">
+              {values.distance} Miles
+            </CustomCard>
+            <CustomCard title="Calories Burned">
+              {values.calories} Calories
+            </CustomCard>
           </div>
           <div
             className="cardContainer"
             style={{ display: !isMobile ? "flex" : "" }}
           >
-            <CustomCard title="Average Pace">{averagePace}</CustomCard>
+            <CustomCard title="Average Pace">{values.averagePace}</CustomCard>
             <CustomTimeCard
-              totalHours={totalHours}
-              totalMinutes={totalMinutes}
-              totalSeconds={totalSeconds}
+              totalHours={values.totalHours}
+              totalMinutes={values.totalMinutes}
+              totalSeconds={values.totalSeconds}
               isMobile={isMobile}
             />
           </div>

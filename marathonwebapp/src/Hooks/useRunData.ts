@@ -1,11 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from 'react';
 import axios, { AxiosError } from "axios";
 import { runDataType } from "../Screens/RunningStats";
 import { useAuth0 } from "@auth0/auth0-react";
 import { v4 as uuid } from "uuid";
-import Pusher from "pusher-js";
 
 const audience = "https://marathon-api/";
+
+export function getRunningTime(runData: { duration: string }[]) {
+  const hours =
+    runData
+      .map((t) => {
+        return Number(t.duration.split(":")[0]);
+      })
+      .reduce((total, add) => total + add) *
+    60 *
+    60;
+  const minutes =
+    runData
+      .map((t) => {
+        return Number(t.duration.split(":")[1]);
+      })
+      .reduce((total, add) => total + add) * 60;
+  const seconds = runData
+    .map((t) => {
+      return Number(t.duration.split(":")[2]);
+    })
+    .reduce((total, add) => total + add);
+  return hours + minutes + seconds;
+}
 
 const useRunData = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -23,20 +45,9 @@ const useRunData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<null | AxiosError>(null);
 
-  Pusher.logToConsole = true;
-
-  var pusher = new Pusher("9ac628943ca9938b1a42", {
-    cluster: "us3",
-  });
-
-  var channel = pusher.subscribe("my-channel");
-  channel.bind("my-event", function (data: any) {
-    alert(JSON.stringify(data));
-  });
-
   useEffect(() => {
     const eventSource = new EventSource(
-      "https://reasonably-needed-penguin.ngrok-free.app/runs/stream"
+      "https://run-tracer-d6e09369b1d2.herokuapp.com/runs/stream"
     );
     eventSource.onmessage = console.log;
 
@@ -58,7 +69,7 @@ const useRunData = () => {
           },
         });
         await axios
-          .get("https://reasonably-needed-penguin.ngrok-free.app/runs", {
+          .get("https://run-tracer-d6e09369b1d2.herokuapp.com/runs", {
             headers: {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": true,
@@ -77,26 +88,7 @@ const useRunData = () => {
               const runNumber = runData?.length;
               setNumberOfRuns(runNumber);
               // Time Spent Running - Convert hours and minutes to seconds first, add them all together to get total seconds, and then get total minutes and total seconds
-              const hours =
-                runData
-                  .map((t) => {
-                    return Number(t.duration.split(":")[0]);
-                  })
-                  .reduce((total, add) => total + add) *
-                60 *
-                60;
-              const minutes =
-                runData
-                  .map((t) => {
-                    return Number(t.duration.split(":")[1]);
-                  })
-                  .reduce((total, add) => total + add) * 60;
-              const seconds = runData
-                .map((t) => {
-                  return Number(t.duration.split(":")[2]);
-                })
-                .reduce((total, add) => total + add);
-              const allTime = hours + minutes + seconds;
+              const allTime = getRunningTime(runData);
               setTotalSeconds(allTime);
               setTotalMinutes(allTime / 60);
               setTotalHours(allTime / 60 / 60);
