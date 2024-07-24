@@ -1,1 +1,8 @@
-# MarathonWeb
+# Marathon Progress Tracker
+I started designing this application prior to when I started training for my first marathon. There are 3 main components to this application:
+### 1. The API
+The very first thing I made created for my vision was the API for recording and displaying the data. The first version of the API was written in Ruby, and the second was written in JavaScript (Express). I personally like the latter more, mainly for its simplicity. In my time building both APIs, I did a lot of learning about OAuth. The current flow is access token based, requiring a valid token for every call. I also implemented SSE (Server Side Events) on the API so that when new data is recorded, it automatically updates the React application to reflect the new data.
+### 2. The Native App
+The second thing I built was the mobile app for recording the data. I designed the app in React Native, making it pretty simple. The data points I opted to collect are distance, duration, calories burned, pace, and average heart rate. In order to get a valid access token to write to the API, a valid login is required. I used Auth0 as my provider, which made things extremely easy. They provide a react native package which keeps track of the token once provided, as well as automatically refreshes it once it has expired.
+### 3. The Web App
+Last but not least, this project itself. The application is a React SPA, meant only to do one thing: display training progress. This application requires a valid login as well in order to gain an access token for getting the data to display. As mentioned above, using SSE, the application automatically updates the data on the screen after new data has been recorded. Also completely optimized for mobile view.
